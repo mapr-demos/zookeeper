@@ -24,6 +24,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.net.InetSocketAddress;
+import java.net.NoRouteToHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
@@ -36,7 +37,6 @@ import java.util.concurrent.TimeUnit;
 import java.net.Socket;
 
 import org.apache.zookeeper.common.Time;
-import org.apache.zookeeper.server.quorum.exception.RuntimeNoReachableHostException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.PortAssignment;
@@ -186,7 +186,7 @@ public class CnxManagerTest extends ZKTestCase {
         Assert.assertFalse(cnxManager.listener.isAlive());
     }
 
-    @Test(expected = RuntimeNoReachableHostException.class)
+    @Test(expected = NoRouteToHostException.class)
     public void testCnxManagerTimeout() throws Exception {
         Random rand = new Random();
         int address = ThreadLocalRandom.current().nextInt(1, 255);

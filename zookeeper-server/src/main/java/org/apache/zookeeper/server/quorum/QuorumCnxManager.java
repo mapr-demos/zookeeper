@@ -19,12 +19,7 @@
 package org.apache.zookeeper.server.quorum;
 
 import java.io.*;
-import java.net.BindException;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
+import java.net.*;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -42,7 +37,6 @@ import org.apache.zookeeper.server.util.ConfigUtils;
 import org.apache.zookeeper.server.ZooKeeperThread;
 import org.apache.zookeeper.server.quorum.auth.QuorumAuthLearner;
 import org.apache.zookeeper.server.quorum.auth.QuorumAuthServer;
-import org.apache.zookeeper.server.quorum.exception.RuntimeNoReachableHostException;
 import org.apache.zookeeper.server.quorum.flexible.QuorumVerifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -636,7 +630,13 @@ public class QuorumCnxManager {
         Socket sock = null;
         try {
             LOG.debug("Opening channel to server " + sid);
-            InetSocketAddress address = electionAddr.getValidAddress();
+            InetSocketAddress address;
+            try {
+                address = electionAddr.getValidAddress();
+            } catch (NoRouteToHostException e) {
+                address = electionAddr.getOne();
+            }
+
             if (self.isSslQuorum()) {
                  SSLSocket sslSock = self.getX509Util().createSSLSocket();
                  setSockOpts(sslSock);
@@ -660,15 +660,6 @@ public class QuorumCnxManager {
                 initiateConnection(sock, sid);
             }
             return true;
-        } catch (RuntimeNoReachableHostException e) {
-            // Sun doesn't include the address that causes this
-            // exception to be thrown, also UAE cannot be wrapped cleanly
-            // so we log the exception in order to capture this critical
-            // detail.
-            LOG.warn("Cannot open channel to " + sid
-                    + " at election address " + electionAddr, e);
-            closeSocket(sock);
-            throw e;
         } catch (X509Exception e) {
             LOG.warn("Cannot open secure channel to " + sid
                     + " at election address " + electionAddr, e);
