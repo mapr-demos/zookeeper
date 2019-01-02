@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.net.Socket;
@@ -186,16 +185,15 @@ public class CnxManagerTest extends ZKTestCase {
         Assert.assertFalse(cnxManager.listener.isAlive());
     }
 
-    @Test(expected = NoRouteToHostException.class)
+    @Test
     public void testCnxManagerTimeout() throws Exception {
-        Random rand = new Random();
         int address = ThreadLocalRandom.current().nextInt(1, 255);
         int deadPort = PortAssignment.unique();
         String deadAddress = "10.1.1." + address;
 
         LOG.info("This is the dead address I'm trying: " + deadAddress);
 
-        peers.put(Long.valueOf(2),
+        peers.put(2L,
                 new QuorumServer(2,
                         new InetSocketAddress(deadAddress, deadPort),
                         new InetSocketAddress(deadAddress, PortAssignment.unique()),
@@ -215,7 +213,7 @@ public class CnxManagerTest extends ZKTestCase {
         cnxManager.toSend(2L, createMsg(ServerState.LOOKING.ordinal(), 1, -1, 1));
         long end = Time.currentElapsedTime();
 
-        if((end - begin) > 6000) Assert.fail("Waited more than necessary");
+        if((end - begin) > 10000) Assert.fail("Waited more than necessary");
         cnxManager.halt();
         Assert.assertFalse(cnxManager.listener.isAlive());
     }
