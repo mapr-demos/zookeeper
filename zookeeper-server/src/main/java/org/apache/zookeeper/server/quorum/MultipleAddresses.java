@@ -111,6 +111,7 @@ public class MultipleAddresses {
      * Returns reachable address. If none is reachable than throws exception.
      *
      * @return address which is reachable.
+     * @throws NoRouteToHostException if none address is reachable
      */
     public InetSocketAddress getValidAddress() throws NoRouteToHostException {
         AtomicReference<InetSocketAddress> address = new AtomicReference<>(null);

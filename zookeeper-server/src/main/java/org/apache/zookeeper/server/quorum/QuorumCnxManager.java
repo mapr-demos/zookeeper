@@ -315,7 +315,13 @@ public class QuorumCnxManager {
         LOG.debug("Opening channel to server " + sid);
         Socket sock = new Socket();
         setSockOpts(sock);
-        sock.connect(self.getVotingView().get(sid).electionAddr.getValidAddress(), cnxTO);
+        InetSocketAddress address;
+        try {
+            address = self.getVotingView().get(sid).electionAddr.getValidAddress();
+        } catch (NoRouteToHostException e) {
+            address = self.getVotingView().get(sid).electionAddr.getOne();
+        }
+        sock.connect(address, cnxTO);
         initiateConnection(sock, sid);
     }
 
@@ -398,7 +404,13 @@ public class QuorumCnxManager {
             // represents protocol version (in other words - message type)
             dout.writeLong(PROTOCOL_VERSION);
             dout.writeLong(self.getId());
-            String addr = formatInetAddr(self.getElectionAddress().getValidAddress());
+            InetSocketAddress address;
+            try {
+                address = self.getElectionAddress().getValidAddress();
+            } catch (NoRouteToHostException e) {
+                address = self.getElectionAddress().getOne();
+            }
+            String addr = formatInetAddr(address);
             byte[] addr_bytes = addr.getBytes();
             dout.writeInt(addr_bytes.length);
             dout.write(addr_bytes);
@@ -638,18 +650,18 @@ public class QuorumCnxManager {
             }
 
             if (self.isSslQuorum()) {
-                 SSLSocket sslSock = self.getX509Util().createSSLSocket();
-                 setSockOpts(sslSock);
-                 sslSock.connect(address, cnxTO);
-                 sslSock.startHandshake();
-                 sock = sslSock;
-             } else {
-                 sock = new Socket();
-                 setSockOpts(sock);
-                 sock.connect(address, cnxTO);
+                SSLSocket sslSock = self.getX509Util().createSSLSocket();
+                setSockOpts(sslSock);
+                sslSock.connect(address, cnxTO);
+                sslSock.startHandshake();
+                sock = sslSock;
+            } else {
+                sock = new Socket();
+                setSockOpts(sock);
+                sock.connect(address, cnxTO);
 
-             }
-             LOG.debug("Connected to server " + sid);
+            }
+            LOG.debug("Connected to server " + sid);
             // Sends connection request asynchronously if the quorum
             // sasl authentication is enabled. This is required because
             // sasl server authentication process may take few seconds to
